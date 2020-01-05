@@ -1,0 +1,32 @@
+Design decisions:
+1> echo hi > & here p2 will throw an error as the file name is missing, '&' is never considered a file name
+   so, > & cat < filename will consider 'cat' to be the file name and eventualy error out as nothing was added to the newargsv array
+2> case: echo hii >existingfile >ambiguous_redirect in this case p2 finds that "existingfile" already exists and errors out it also erros out the ambiguity in the 
+   redirection. Thus, giving out 2 errors, unlike normal shell that would have just given a single error message about ambiguity.
+3> case: cat < nonexistingfile < another_nonexistingfile :in this case p2 will check for existance of both the files, and even though the input command is ambiguous alo   ng with the error for ambiguity it will error out for nonexistance of the 2 files.
+for p4:
+ design decisions:
+1> for inputs like echo hii > & the '&' is not considered as the file name. & is only reserved for  background process. so p2 in this case is not aware of the output file name thus it prompts a error message.
+2> for inputs like echo hii > a >>b , p2 interprets this as an ambiguous input command. there should only be either of(> or >> or >>&) in a single input.
+
+Algorithm:
+-call the method parse to create newargsv and redirection buffer these hold pointers of type char. 
+(redirection buffer  holds the input output file name and redirection signs if any presennt in a given input command.)
+parse also sets other required flags like:
+	-the one indicating if pipe creation is required.
+-once we have the actual user input p2 does the required preprocessing by calling the function check_for_builtins.
+this function inteprets the user input. 
+	-for every normal input i.e. an input with no !! or !number or !$ this method stores the newargsv, redirection buffer, piping flag,etc.
+	-for !{number} p2 fetches the previous command stored in the struct for the requested historic command. and also makes the current command flags and array in the struct equal to the requested command's struct.
+	-for !! p2 used the old implementaion, the difference is just that it also stores the commadn for history implementation.
+	-this method also handles cd command.
+	-for appending i.e inputs like >> and >>& p2 first check the presence of the outputfile before procedding. and errors out if thre files to which data is needed to be appended is not present.
+-later once the command is fetched, it goes ahead 
+	if the pipe_creation_required variable is set to 1.
+		it creates a child which internally creates a grandchild.
+		the grandchild reads from the input and writes its output on to the write end of the pipe.
+		the child reads data from the read end of the pipe and writes the final output to the desired output file descriptor.
+	if the pipe_creation_required variable is set to 0.
+		it continues with what p2 normally used to do.
+		
+
